@@ -1,0 +1,1592 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TF-X Clamp Spacing Calculator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .main-container {
+            max-width: 1800px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: 20px;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #2980b9 0%, #3498db 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 32px;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .header p {
+            font-size: 16px;
+            opacity: 0.95;
+        }
+        
+        .standards-ribbon {
+            background: #2c3e50;
+            color: white;
+            padding: 10px;
+            text-align: center;
+            font-size: 12px;
+        }
+        
+        .system-selector {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-bottom: 3px solid #e0e0e0;
+            justify-content: center;
+        }
+        
+        .system-btn {
+            padding: 12px 24px;
+            border: 2px solid #3498db;
+            background: white;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .system-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.3);
+        }
+        
+        .system-btn.active {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            box-shadow: 0 5px 20px rgba(52, 152, 219, 0.4);
+        }
+        
+        .system-icon {
+            font-size: 20px;
+        }
+        
+        .content-area {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            padding: 20px;
+        }
+        
+        .panel {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            border: 2px solid #e8e8e8;
+        }
+        
+        .panel h2 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #3498db;
+            font-size: 20px;
+        }
+        
+        .input-group {
+            margin-bottom: 18px;
+            display: grid;
+            grid-template-columns: 250px 1fr 80px;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .input-group label {
+            font-weight: 600;
+            color: #34495e;
+            font-size: 14px;
+        }
+        
+        .input-group input,
+        .input-group select {
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        
+        .input-group input:focus,
+        .input-group select:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+        }
+        
+        .unit {
+            color: #7f8c8d;
+            font-size: 13px;
+        }
+        
+        .calculate-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #27ae60, #2ecc71);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 20px;
+            box-shadow: 0 5px 15px rgba(46, 204, 113, 0.3);
+        }
+        
+        .calculate-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(46, 204, 113, 0.4);
+        }
+        
+        .results-panel {
+            grid-column: span 2;
+        }
+        
+        .result-box {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-left: 5px solid #3498db;
+        }
+        
+        .result-main {
+            font-size: 28px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin: 10px 0;
+        }
+        
+        .result-secondary {
+            font-size: 18px;
+            color: #34495e;
+            margin: 5px 0;
+        }
+        
+        .reference-note {
+            font-size: 12px;
+            color: #7f8c8d;
+            font-style: italic;
+            margin-top: 5px;
+        }
+        
+        .alert {
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            display: flex;
+            align-items: start;
+            gap: 10px;
+        }
+        
+        .alert-warning {
+            background: #fff3cd;
+            border-left: 5px solid #ffc107;
+            color: #856404;
+        }
+        
+        .alert-danger {
+            background: #f8d7da;
+            border-left: 5px solid #dc3545;
+            color: #721c24;
+        }
+        
+        .alert-info {
+            background: #d1ecf1;
+            border-left: 5px solid #17a2b8;
+            color: #0c5460;
+        }
+        
+        .alert-success {
+            background: #d4edda;
+            border-left: 5px solid #28a745;
+            color: #155724;
+        }
+        
+        .reference-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .reference-card {
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+            border: 1px solid #e0e0e0;
+        }
+        
+        .reference-card h3 {
+            color: #2c3e50;
+            font-size: 16px;
+            margin-bottom: 10px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #3498db;
+        }
+        
+        .reference-table {
+            width: 100%;
+            font-size: 13px;
+        }
+        
+        .reference-table td {
+            padding: 5px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .reference-table td:first-child {
+            font-weight: 600;
+            color: #34495e;
+        }
+        
+        .zone-modifier {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .zone-checkbox {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .zone-checkbox:hover {
+            background: #e9ecef;
+        }
+        
+        .zone-checkbox input {
+            cursor: pointer;
+        }
+        
+        .zone-checkbox label {
+            cursor: pointer;
+            font-size: 13px;
+            color: #495057;
+        }
+        
+        .standards-table {
+            width: 100%;
+            margin: 20px 0;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+        
+        .standards-table th {
+            background: #34495e;
+            color: white;
+            padding: 10px;
+            text-align: left;
+        }
+        
+        .standards-table td {
+            padding: 8px;
+            border: 1px solid #ddd;
+        }
+        
+        .standards-table tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+        
+        .calculation-details {
+            background: #ecf0f1;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            font-size: 13px;
+        }
+        
+        .calculation-details h4 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        
+        .calculation-details pre {
+            background: white;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .export-section {
+            padding: 20px;
+            background: #f8f9fa;
+            border-top: 3px solid #e0e0e0;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+        
+        .export-btn {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #8e44ad, #9b59b6);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .export-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(155, 89, 182, 0.4);
+        }
+        
+        @media (max-width: 1200px) {
+            .content-area {
+                grid-template-columns: 1fr;
+            }
+            
+            .results-panel {
+                grid-column: span 1;
+            }
+        }
+        
+        .loading-spinner {
+            display: none;
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <div class="header">
+            <h1>✈️ TF-X Clamp Spacing Calculator</h1>
+            <p>System Based Clamping Distance Calculation</p>
+        </div>
+        
+        <div class="standards-ribbon">
+            Referenced Standards: ARP994C | AS5440 | MIL-DTL-85052 | MIL-STD-810G | AS1154 | MIL-STD-889 | ARP1383 | MIL-STD-1560
+        </div>
+        
+        <div class="system-selector">
+            <button class="system-btn active" onclick="selectSystem('hydraulic')" data-system="hydraulic">
+                <span class="system-icon">💧</span> Hydraulic
+            </button>
+            <button class="system-btn" onclick="selectSystem('pneumatic-hp')" data-system="pneumatic-hp">
+                <span class="system-icon">🔵</span> Pneumatic HP
+            </button>
+            <button class="system-btn" onclick="selectSystem('pneumatic-lp')" data-system="pneumatic-lp">
+                <span class="system-icon">⚪</span> Pneumatic LP
+            </button>
+            <button class="system-btn" onclick="selectSystem('oxygen-hp')" data-system="oxygen-hp">
+                <span class="system-icon">⭕</span> Oxygen HP
+            </button>
+            <button class="system-btn" onclick="selectSystem('oxygen-lp')" data-system="oxygen-lp">
+                <span class="system-icon">🟢</span> Oxygen LP
+            </button>
+            <button class="system-btn" onclick="selectSystem('fuel')" data-system="fuel">
+                <span class="system-icon">⛽</span> Fuel
+            </button>
+            <button class="system-btn" onclick="selectSystem('bleed-air')" data-system="bleed-air">
+                <span class="system-icon">🔥</span> Bleed Air
+            </button>
+            <button class="system-btn" onclick="selectSystem('ecs')" data-system="ecs">
+                <span class="system-icon">❄️</span> ECS
+            </button>
+            <button class="system-btn" onclick="selectSystem('electrical')" data-system="electrical">
+                <span class="system-icon">⚡</span> Electrical
+            </button>
+        </div>
+        
+        <div class="content-area">
+            <div class="panel">
+                <h2>System Configuration</h2>
+                
+                <div class="input-group">
+                    <label>System Type:</label>
+                    <input type="text" id="systemType" value="Hydraulic System" readonly style="background: #f0f0f0;">
+                    <span class="unit"></span>
+                </div>
+                
+                <div class="input-group">
+                    <label>Tube/Line Material:</label>
+                    <select id="material">
+                        <option value="titanium">Titanium 3Al-2.5V</option>
+                        <option value="steel-321">Steel CRES 321</option>
+						<option value="steel-21-6-9">Steel CRES 21-6-9</option>
+                        <option value="steel-304">Steel CRES 304</option>
+                        <option value="aluminum">Aluminum 6061-T6</option>
+                        <option value="inconel">Inconel 625</option>
+                    </select>
+                    <span class="unit"></span>
+                </div>
+                
+                <div class="input-group">
+                    <label>Line Size (Dash):</label>
+                    <select id="lineSize" onchange="updateAutoWallThickness()">
+                        <option value="3">-3 (3/16")</option>
+                        <option value="4">-4 (1/4")</option>
+                        <option value="5">-5 (5/16")</option>
+                        <option value="6">-6 (3/8")</option>
+                        <option value="8">-8 (1/2")</option>
+                        <option value="10">-10 (5/8")</option>
+                        <option value="12">-12 (3/4")</option>
+                        <option value="16">-16 (1")</option>
+                        <option value="20">-20 (1.25")</option>
+                        <option value="24">-24 (1.5")</option>
+                        <option value="32">-32 (2")</option>
+                    </select>
+                    <span class="unit"></span>
+                </div>
+                
+                <div class="input-group">
+                    <label>Operating Pressure:</label>
+                    <input type="number" id="pressure" value="4200" min="0" max="8000" onchange="updateAutoWallThickness()">
+                    <span class="unit">psi</span>
+                </div>
+                
+                <div class="input-group">
+                    <label>Operating Temperature:</label>
+                    <input type="number" id="temperature" value="160" min="-65" max="850">
+                    <span class="unit">°F</span>
+                </div>
+                
+                <div class="input-group">
+                    <label>Target Frequency:</label>
+                    <input type="number" id="frequency" value="200" min="20" max="500">
+                    <span class="unit">Hz</span>
+                </div>
+                
+				<div class="input-group">
+                    <label>Boundary Condition:</label>
+                    <select id="boundaryCondition">
+						<option value="clamped-clamped">Clamped–Clamped (fixed–fixed)</option>
+						<option value="pinned-pinned">Pinned–Pinned (simply supported)</option>
+						<option value="clamped-free">Clamped–Free (cantilever)</option>
+						<option value="clamped-pinned">Clamped–Pinned (fixed–pinned)</option>
+						<option value="free-free">Free–Free</option>
+						<option value="pinned-free">Pinned–Free</option>
+                    </select>
+                    <span class="unit"></span>
+                </div>
+				
+                <div class="input-group">
+                    <label>Wall Thickness Mode:</label>
+                    <select id="wallMode" onchange="toggleWallThickness()">
+                        <option value="auto">Auto (Pressure-based)</option>
+                        <option value="manual">Manual Entry</option>
+                    </select>
+                    <span class="unit"></span>
+                </div>
+                
+                <div class="input-group" id="wallThicknessGroup" style="display: none;">
+                    <label>Wall Thickness:</label>
+                    <input type="number" id="wallThickness" value="0.035" min="0.010" max="0.250" step="0.001">
+                    <span class="unit">inches</span>
+                </div>
+                
+                <div class="input-group">
+                    <label>Calculation Method:</label>
+                    <select id="calcMethod">
+                        <option value="conservative">Conservative (Min of methods)</option>
+                        <option value="baseline">Baseline Table Only</option>
+                        <option value="frequency">Frequency-Based Only</option>
+                    </select>
+                    <span class="unit"></span>
+                </div>
+                
+                <button class="calculate-btn" onclick="calculateSpacing()">
+                    Calculate Clamp Spacing
+                </button>
+            </div>
+            
+            <div class="panel">
+                <h2>Environmental Zones</h2>
+                
+                <p style="margin-bottom: 15px; color: #666; font-size: 14px;">
+                    Select applicable zones where the line will be routed:
+                </p>
+                
+                <div class="zone-modifier">
+                    <div class="zone-checkbox">
+                        <input type="checkbox" id="zone-engine" onchange="updateZones()">
+                        <label for="zone-engine">High Vibration Zones (×0.50)</label>
+                    </div>
+                    <div class="zone-checkbox">
+                        <input type="checkbox" id="zone-landing" onchange="updateZones()">
+                        <label for="zone-landing">Landing Gear and Wheel Well (×0.60)</label>
+                    </div>
+                    <div class="zone-checkbox">
+                        <input type="checkbox" id="zone-pressure" onchange="updateZones()">
+                        <label for="zone-pressure">Pressurized Cabin (×0.90)</label>
+                    </div>
+                    <div class="zone-checkbox">
+                        <input type="checkbox" id="zone-external" onchange="updateZones()">
+                        <label for="zone-external">External/Exposed (×0.85)</label>
+                    </div>
+                </div>
+                
+                <div style="margin-top: 20px;">
+                    <h3 style="font-size: 16px; color: #34495e; margin-bottom: 10px;">Line Configuration</h3>
+                    <div class="zone-modifier">
+                        <div class="zone-checkbox">
+                            <input type="checkbox" id="config-fittings" onchange="updateConfig()">
+                            <label for="config-fittings">Has Unions/Tees (×0.80)</label>
+                        </div>
+                        <div class="zone-checkbox">
+                            <input type="checkbox" id="config-bends" onchange="updateConfig()">
+                            <label for="config-bends">Bends >20° (×0.85)</label>
+                        </div>
+                        <div class="zone-checkbox">
+                            <input type="checkbox" id="config-vertical" onchange="updateConfig()">
+                            <label for="config-vertical">Vertical Run (×0.50)</label>
+                        </div>
+                        <div class="zone-checkbox">
+                            <input type="checkbox" id="config-thermal" onchange="updateConfig()">
+                            <label for="config-thermal">Thermal Expansion (×0.90)</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="panel results-panel">
+                <h2>Calculated Results</h2>
+                <div id="results">
+                    <div class="alert alert-info">
+                        <span>ℹ️</span>
+                        <span>Select system type and parameters, then click Calculate to see results.</span>
+                    </div>
+                </div>
+                
+                <div id="loading" class="loading-spinner"></div>
+            </div>
+        </div>
+        
+        <div class="content-area">
+            <div class="panel" style="grid-column: span 2;">
+                <h2>AS5440 Baseline Clamp Spacing Table</h2>
+                <table class="standards-table">
+                    <thead>
+                        <tr>
+                            <th>Line Size (Dash)</th>
+                            <th>Nominal OD (inches)</th>
+                            <th>Titanium (inches)</th>
+                            <th>Steel CRES (inches)</th>
+                            <th>Aluminum (inches)</th>
+                            <th>Inconel (inches)</th>
+                            <th>Reference</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>-3</td>
+                            <td>0.188</td>
+                            <td>13.0</td>
+                            <td>14.0</td>
+                            <td>12.0</td>
+                            <td>14.0</td>
+                            <td>AS5440</td>
+                        </tr>
+                        <tr>
+                            <td>-4</td>
+                            <td>0.250</td>
+                            <td>15.0</td>
+                            <td>16.0</td>
+                            <td>13.5</td>
+                            <td>16.0</td>
+                            <td>AS5440</td>
+                        </tr>
+                        <tr>
+                            <td>-5</td>
+                            <td>0.313</td>
+                            <td>16.0</td>
+                            <td>18.0</td>
+                            <td>15.0</td>
+                            <td>16.0</td>
+                            <td>AS5440</td>
+                        </tr>
+                        <tr>
+                            <td>-6</td>
+                            <td>0.375</td>
+                            <td>17.0</td>
+                            <td>20.0</td>
+                            <td>16.5</td>
+                            <td>20.0</td>
+                            <td>AS5440</td>
+                        </tr>
+                        <tr>
+                            <td>-8</td>
+                            <td>0.500</td>
+                            <td>20.0</td>
+                            <td>23.0</td>
+                            <td>19.0</td>
+                            <td>23.0</td>
+                            <td>AS5440</td>
+                        </tr>
+                        <tr>
+                            <td>-10</td>
+                            <td>0.625</td>
+                            <td>22.0</td>
+                            <td>25.5</td>
+                            <td>22.0</td>
+                            <td>22.0</td>
+                            <td>AS5440</td>
+                        </tr>
+                        <tr>
+                            <td>-12</td>
+                            <td>0.750</td>
+                            <td>24.0</td>
+                            <td>27.5</td>
+                            <td>23.0</td>
+                            <td>27.5</td>
+                            <td>AS5440</td>
+                        </tr>
+                        <tr>
+                            <td>-16</td>
+                            <td>1.000</td>
+                            <td>30.0</td>
+                            <td>32.0</td>
+                            <td>27.5</td>
+                            <td>35.0</td>
+                            <td>AS5440</td>
+                        </tr>
+                        <tr>
+                            <td>-20</td>
+                            <td>1.250</td>
+                            <td>28.0</td>
+                            <td>30.0</td>
+                            <td>26.5</td>
+                            <td>30.0</td>
+                            <td>AS5440</td>
+                        </tr>
+                        <tr>
+                            <td>-24</td>
+                            <td>1.500</td>
+                            <td>34.0</td>
+                            <td>32.5</td>
+                            <td>29.5</td>
+                            <td>32.5</td>
+                            <td>AS5440</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <div class="content-area">
+            <div class="panel" style="grid-column: span 2;">
+                <h2>Wall Thickness Reference Table</h2>
+                <table class="standards-table">
+                    <thead>
+                        <tr>
+                            <th>Line Size</th>
+                            <th>OD (in)</th>
+                            <th>Low Pressure<br>&lt;1000 psi</th>
+                            <th>Medium Pressure<br>1000-3000 psi</th>
+                            <th>High Pressure<br>3000-5000 psi</th>
+                            <th>Very High<br>&gt;5000 psi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>-3</td>
+                            <td>0.188</td>
+                            <td>0.012-0.016</td>
+                            <td>0.016-0.020</td>
+                            <td>0.020-0.028</td>
+                            <td>0.028-0.035</td>
+                        </tr>
+                        <tr>
+                            <td>-4</td>
+                            <td>0.250</td>
+                            <td>0.016-0.020</td>
+                            <td>0.020-0.028</td>
+                            <td>0.028-0.035</td>
+                            <td>0.035-0.049</td>
+                        </tr>
+                        <tr>
+                            <td>-6</td>
+                            <td>0.375</td>
+                            <td>0.020-0.028</td>
+                            <td>0.028-0.035</td>
+                            <td>0.035-0.049</td>
+                            <td>0.049-0.065</td>
+                        </tr>
+                        <tr>
+                            <td>-8</td>
+                            <td>0.500</td>
+                            <td>0.028-0.035</td>
+                            <td>0.035-0.042</td>
+                            <td>0.042-0.058</td>
+                            <td>0.058-0.083</td>
+                        </tr>
+                        <tr>
+                            <td>-10</td>
+                            <td>0.625</td>
+                            <td>0.028-0.035</td>
+                            <td>0.035-0.049</td>
+                            <td>0.049-0.065</td>
+                            <td>0.065-0.095</td>
+                        </tr>
+                        <tr>
+                            <td>-12</td>
+                            <td>0.750</td>
+                            <td>0.035-0.042</td>
+                            <td>0.042-0.058</td>
+                            <td>0.058-0.083</td>
+                            <td>0.083-0.109</td>
+                        </tr>
+                        <tr>
+                            <td>-16</td>
+                            <td>1.000</td>
+                            <td>0.042-0.049</td>
+                            <td>0.049-0.065</td>
+                            <td>0.065-0.095</td>
+                            <td>0.095-0.120</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <div class="content-area">
+            <div class="panel" style="grid-column: span 2;">
+                <h2>Standards Reference Matrix</h2>
+                
+                <div class="reference-grid">
+                    <div class="reference-card">
+                        <h3>Primary Standards</h3>
+                        <table class="reference-table">
+                            <tr>
+                                <td>ARP994C</td>
+                                <td>Design of Tubing Installations</td>
+                            </tr>
+                            <tr>
+                                <td>AS5440</td>
+                                <td>Clamp Block Assembly</td>
+                            </tr>
+                            <tr>
+                                <td>MIL-DTL-85052</td>
+                                <td>Loop Clamps</td>
+                            </tr>
+                            <tr>
+                                <td>MIL-STD-810G</td>
+                                <td>Environmental Testing</td>
+                            </tr>
+                            <tr>
+                                <td>AS8010</td>
+                                <td>Oxygen Purity Standard</td>
+                            </tr>
+                        </table>
+                    </div>
+                    
+                    <div class="reference-card">
+                        <h3>Material Properties (MIL-HDBK-5J)</h3>
+                        <table class="reference-table">
+                            <tr>
+                                <td>Titanium E</td>
+                                <td>14.5 × 10⁶ psi</td>
+                            </tr>
+                            <tr>
+                                <td>Steel E</td>
+                                <td>29 × 10⁶ psi</td>
+                            </tr>
+                            <tr>
+                                <td>Aluminum E</td>
+                                <td>10 × 10⁶ psi</td>
+                            </tr>
+                            <tr>
+                                <td>Inconel E</td>
+                                <td>30 × 10⁶ psi</td>
+                            </tr>
+                        </table>
+                    </div>
+                    
+                    <div class="reference-card">
+                        <h3>Zone Reduction Factors</h3>
+                        <table class="reference-table">
+                            <tr>
+                                <td>High Vibration Zones</td>
+                                <td>0.50×</td>
+                            </tr>
+                            <tr>
+                                <td>Landing Gear and Wheel Well</td>
+                                <td>0.60×</td>
+                            </tr>
+                            <tr>
+                                <td>Pressurized Cabin</td>
+                                <td>0.90×</td>
+                            </tr>
+                            <tr>
+                                <td>External/Exposed</td>
+                                <td>0.85×</td>
+                            </tr>
+                        </table>
+                    </div>
+                    
+
+                </div>
+            </div>
+        </div>
+        
+        <div class="export-section">
+            <button class="export-btn" onclick="exportToCSV()">
+                <span>📊</span> Export to CSV
+            </button>
+            <button class="export-btn" onclick="printResults()">
+                <span>🖨️</span> Print Results
+            </button>
+            <button class="export-btn" onclick="saveConfiguration()">
+                <span>💾</span> Save Configuration
+            </button>
+            <button class="export-btn" onclick="showStandards()">
+                <span>📚</span> Standards List
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // System configurations
+        const systemConfigs = {
+            'hydraulic': {
+                name: 'Hydraulic System',
+                pressureRange: [0, 8000],
+                tempRange: [-65, 275],
+                materials: ['titanium', 'steel-321', 'steel-304', 'steel-21-6-9', 'aluminum'],
+                baseFactor: 1.0,
+                standards: ['ARP994C', 'AS5440', 'MIL-DTL-85052'],
+                fluidDensity: 0.0315,
+                reference: 'ARP994C'
+            },
+            'pneumatic-hp': {
+                name: 'High Pressure Pneumatic',
+                pressureRange: [3000, 5000],
+                tempRange: [-65, 400],
+                materials: ['titanium', 'steel-321', 'steel-21-6-9', 'steel-304'],
+                baseFactor: 1.0,
+                standards: ['AS5440'],
+                fluidDensity: 0.00012,
+                reference: 'AS5440'
+            },
+            'pneumatic-lp': {
+                name: 'Low Pressure Pneumatic',
+                pressureRange: [0, 500],
+                tempRange: [-65, 250],
+                materials: ['aluminum', 'steel-304'],
+                baseFactor: 1.2,
+                standards: ['AS5440'],
+                fluidDensity: 0.00012,
+                reference: 'AS5440'
+            },
+            'oxygen-hp': {
+                name: 'High Pressure Oxygen',
+                pressureRange: [1800, 3000],
+                tempRange: [-65, 160],
+                materials: ['steel-321', 'steel-304'],
+                baseFactor: 0.8,
+                standards: ['AS8010', 'AIR825A'],
+                fluidDensity: 0.00013,
+                warnings: ['No aluminum or titanium per AS8010', 'Oxygen-clean required'],
+                reference: 'AS8010'
+            },
+            'oxygen-lp': {
+                name: 'Low Pressure Oxygen',
+                pressureRange: [0, 75],
+                tempRange: [-65, 100],
+                materials: ['steel-304'],
+                baseFactor: 1.1,
+                standards: ['AS8010'],
+                fluidDensity: 0.00013,
+                reference: 'AS8010'
+            },
+            'fuel': {
+                name: 'Fuel System',
+                pressureRange: [0, 150],
+                tempRange: [-65, 180],
+                materials: ['aluminum', 'steel-304'],
+                baseFactor: 0.9,
+                standards: ['14 CFR Part 23/25'],
+                fluidDensity: 0.028,
+                warnings: ['Conductive clamps required', 'Fire zone considerations'],
+                reference: '14 CFR 25.993'
+            },
+            'bleed-air': {
+                name: 'Bleed Air System',
+                pressureRange: [0, 500],
+                tempRange: [0, 850],
+                materials: ['steel-321', 'inconel'],
+                baseFactor: 0.6,
+                standards: ['ARP994C'],
+                fluidDensity: 0.00008,
+                warnings: ['High temperature cushions required'],
+                reference: 'ARP994C'
+            },
+            'ecs': {
+                name: 'Environmental Control System',
+                pressureRange: [0, 100],
+                tempRange: [-40, 200],
+                materials: ['aluminum', 'steel-304'],
+                baseFactor: 1.3,
+                standards: ['ARP994C'],
+                fluidDensity: 0.00010,
+                reference: 'ARP994C'
+            },
+            'electrical': {
+                name: 'Electrical Wiring',
+                pressureRange: [0, 0],
+                tempRange: [-65, 200],
+                materials: ['n/a'],
+                baseFactor: 1.0,
+                standards: ['AS50881', 'MIL-STD-1560'],
+                fluidDensity: 0,
+                warnings: ['24" max spacing typical', '12" for vertical runs'],
+                reference: 'AS50881'
+            }
+        };
+        
+        // Baseline spacing (inches)
+        const baselineSpacing = {
+            'titanium': {
+                3: 13.0, 4: 15.0, 5: 16.0, 6: 17.0, 8: 20.0,
+                10: 22.0, 12: 24.0, 16: 28.0, 20: 31.0, 24: 34.0, 32: 35.0
+            },
+            'steel-321': {
+                3: 14.0, 4: 16.0, 5: 18.0, 6: 20.0, 8: 23.0,
+                10: 25.5, 12: 27.5, 16: 30.0, 20: 31.5, 24: 32.5, 32: 36.0
+            },
+			'steel-21-6-9': {
+                3: 14.0, 4: 16.0, 5: 18.0, 6: 20.0, 8: 23.0,
+                10: 25.5, 12: 27.5, 16: 30.0, 20: 31.5, 24: 32.5, 32: 36.0
+            },
+            'steel-304': {
+                3: 14.0, 4: 16.0, 5: 18.0, 6: 20.0, 8: 23.0,
+                10: 25.5, 12: 27.5, 16: 30.0, 20: 31.5, 24: 32.5, 32: 36.0
+            },
+            'aluminum': {
+                3: 12.0, 4: 13.5, 5: 15.0, 6: 16.5, 8: 19.0,
+                10: 22.0, 12: 23.0, 16: 26.5, 20: 28.5, 24: 29.5, 32: 32.0
+            },
+            'inconel': {
+                3: 14.0, 4: 16.0, 5: 18.0, 6: 20.0, 8: 23.0,
+                10: 25.5, 12: 27.5, 16: 30.0, 20: 31.5, 24: 32.5, 32: 36.0
+            },
+        };
+        
+        // Material properties
+        const materialProperties = {
+            'titanium': { 
+                E: 14.5e6,
+                density: 0.162,
+                tempLimit: 600
+            },
+            'steel-321': { 
+                E: 29.0e6,
+                density: 0.290,
+                tempLimit: 800
+            },
+			'steel-21-6-9': { 
+                E: 29.0e6,
+                density: 0.290,
+                tempLimit: 800
+            },
+            'steel-304': { 
+                E: 29.0e6,
+                density: 0.290,
+                tempLimit: 800
+            },
+            'aluminum': { 
+                E: 10.0e6,
+                density: 0.098,
+                tempLimit: 300
+            },
+            'inconel': { 
+                E: 30.0e6,
+                density: 0.305,
+                tempLimit: 1200
+            }
+        };
+        
+        // Vibration environment factors
+        const vibrationFactors = {
+            'minimal': 1.0,
+            'moderate': 0.85,
+            'severe': 0.70,
+            'extreme': 0.55
+        };
+        
+		const bc_lambda = {
+		  'clamped-clamped': 22.373,
+		  'pinned-pinned': Math.PI*Math.PI,
+		  'clamped-free': 1.875104068711961**2,
+		  'clamped-pinned': 3.9266**2,
+		  'free-free': 22.373,
+		  'pinned-free': (Math.PI/2)**2 // ≈2.467
+		};
+		
+        let currentSystem = 'hydraulic';
+        let zoneModifiers = 1.0;
+        let configModifiers = 1.0;
+        
+        function updateAutoWallThickness() {
+            const wallMode = document.getElementById('wallMode').value;
+            if (wallMode === 'manual') {
+                const currentValue = parseFloat(document.getElementById('wallThickness').value);
+                if (currentValue === 0.035) {
+                    const size = parseInt(document.getElementById('lineSize').value);
+                    const pressure = parseFloat(document.getElementById('pressure').value);
+                    const autoThickness = getWallThickness(size, pressure);
+                    document.getElementById('wallThickness').value = autoThickness.toFixed(3);
+                }
+            }
+        }
+        
+        function toggleWallThickness() {
+            const wallMode = document.getElementById('wallMode').value;
+            const wallThicknessGroup = document.getElementById('wallThicknessGroup');
+            
+            if (wallMode === 'manual') {
+                wallThicknessGroup.style.display = 'grid';
+                const size = parseInt(document.getElementById('lineSize').value);
+                const pressure = parseFloat(document.getElementById('pressure').value);
+                const autoThickness = getWallThickness(size, pressure);
+                document.getElementById('wallThickness').value = autoThickness.toFixed(3);
+            } else {
+                wallThicknessGroup.style.display = 'none';
+            }
+        }
+        
+        function selectSystem(system) {
+            currentSystem = system;
+            
+            document.querySelectorAll('.system-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector(`[data-system="${system}"]`).classList.add('active');
+            
+            const config = systemConfigs[system];
+            document.getElementById('systemType').value = config.name;
+            
+            document.getElementById('pressure').min = config.pressureRange[0];
+            document.getElementById('pressure').max = config.pressureRange[1];
+            document.getElementById('pressure').value = Math.min(3000, config.pressureRange[1]);
+            
+            document.getElementById('temperature').min = config.tempRange[0];
+            document.getElementById('temperature').max = config.tempRange[1];
+            document.getElementById('temperature').value = Math.min(160, config.tempRange[1]);
+            
+            updateMaterialOptions(config.materials);
+            
+            document.getElementById('results').innerHTML = `
+                <div class="alert alert-info">
+                    <span>ℹ️</span>
+                    <span>Parameters updated for ${config.name}. Click Calculate to see results.</span>
+                </div>
+            `;
+        }
+        
+
+
+        function updateMaterialOptions(materials) {
+            const select = document.getElementById('material');
+            const currentValue = select.value;
+            
+            select.innerHTML = '';
+            
+            const materialNames = {
+                'titanium': 'Titanium 3Al-2.5V',
+                'steel-321': 'Steel CRES 321',
+				'steel-21-6-9': 'Steel CRES 21-6-9',
+                'steel-304': 'Steel CRES 304',
+                'aluminum': 'Aluminum 6061-T6',
+                'inconel': 'Inconel 625',
+                'n/a': 'Not Applicable'
+            };
+            
+            materials.forEach(mat => {
+                const option = document.createElement('option');
+                option.value = mat;
+                option.textContent = materialNames[mat];
+                select.appendChild(option);
+            });
+            
+            if (materials.includes(currentValue)) {
+                select.value = currentValue;
+            }
+        }
+        
+        function updateZones() {
+            zoneModifiers = 1.0;
+            
+            const zones = {
+                'zone-engine': 0.50,
+                'zone-landing': 0.60,
+                'zone-pressure': 0.90,
+                'zone-external': 0.85
+            };
+            
+            for (const [id, modifier] of Object.entries(zones)) {
+                if (document.getElementById(id).checked) {
+                    zoneModifiers = Math.min(zoneModifiers, modifier);
+                }
+            }
+        }
+        
+        function updateConfig() {
+            configModifiers = 1.0;
+            
+            if (document.getElementById('config-fittings').checked) {
+                configModifiers *= 0.8;
+            }
+            if (document.getElementById('config-bends').checked) {
+                configModifiers *= 0.85;
+            }
+            if (document.getElementById('config-vertical').checked) {
+                configModifiers *= 0.5;
+            }
+            if (document.getElementById('config-thermal').checked) {
+                configModifiers *= 0.9;
+            }
+        }
+        
+        function calculateSpacing() {
+            document.getElementById('loading').style.display = 'block';
+            
+            setTimeout(() => {
+                const config = systemConfigs[currentSystem];
+                const material = document.getElementById('material').value;
+                const size = parseInt(document.getElementById('lineSize').value);
+                const pressure = parseFloat(document.getElementById('pressure').value);
+                const temperature = parseFloat(document.getElementById('temperature').value);
+                const frequency = parseFloat(document.getElementById('frequency').value);
+                const calcMethod = document.getElementById('calcMethod').value;
+                const bc = document.getElementById('boundaryCondition').value;
+				const lambda1 = bc_lambda[bc]||22.373;
+				
+                let baseSpacing = baselineSpacing[material]?.[size] || 24;
+                
+                baseSpacing *= config.baseFactor;
+                
+                updateZones();
+                baseSpacing *= zoneModifiers;
+                
+                updateConfig();
+                baseSpacing *= configModifiers;
+                
+                if (currentSystem === 'bleed-air' && temperature > 400) {
+                    const tempFactor = temperature > 600 ? 0.6 : 0.75;
+                    baseSpacing *= tempFactor;
+                }
+                
+                let freqSpacing = null;
+                if (material !== 'n/a' && currentSystem !== 'electrical') {
+                    freqSpacing = calculateFrequencySpacing(material, size, frequency, pressure, config.fluidDensity, lambda1);
+                }
+                
+                let finalSpacing;
+                if (calcMethod === 'baseline') {
+                    finalSpacing = baseSpacing;
+                } else if (calcMethod === 'frequency' && freqSpacing) {
+                    finalSpacing = freqSpacing;
+                } else if (calcMethod === 'conservative' && freqSpacing) {
+                    finalSpacing = Math.min(baseSpacing, freqSpacing);
+                } else {
+                    finalSpacing = baseSpacing;
+                }
+                
+                if (finalSpacing < 6) finalSpacing = 6;
+                if (finalSpacing > 48) finalSpacing = 48;
+                
+                displayResults(finalSpacing, baseSpacing, freqSpacing, config);
+                
+                document.getElementById('loading').style.display = 'none';
+            }, 500);
+        }
+        
+        function calculateFrequencySpacing(material, size, frequency, pressure, fluidDensity, lambda1) {
+            const materialProps = materialProperties[material];
+            if (!materialProps) return null;
+            
+            const od = size * 0.0625;
+            
+            const wallMode = document.getElementById('wallMode').value;
+            let wallThickness;
+            if (wallMode === 'manual') {
+                wallThickness = parseFloat(document.getElementById('wallThickness').value);
+            } else {
+                wallThickness = getWallThickness(size, pressure);
+            }
+            
+            const id = od - 2 * wallThickness;
+            
+            if (id <= 0 || wallThickness <= 0) return null;
+            
+            const I = Math.PI / 64 * (Math.pow(od, 4) - Math.pow(id, 4));
+            
+            const tubeArea = Math.PI / 4 * (od * od - id * id);
+            const fluidArea = Math.PI / 4 * id * id;
+            
+            const mu = (tubeArea * materialProps.density + fluidArea * fluidDensity) / 386.4;
+            
+            
+            const L = Math.sqrt(lambda1 / (2 * Math.PI * frequency)) * 
+                      Math.pow((materialProps.E * I) / mu, 0.25);
+            
+            return L;
+        }
+        
+        function getWallThickness(size, pressure) {
+            const baseWallThicknesses = {
+                3: 0.016, 4: 0.020, 5: 0.020, 6: 0.028,
+                8: 0.035, 10: 0.035, 12: 0.042, 16: 0.049,
+                20: 0.065, 24: 0.065, 32: 0.083
+            };
+            
+            let thickness = baseWallThicknesses[size] || 0.035;
+            
+            if (pressure > 5000) thickness *= 1.5;
+            else if (pressure > 3000) thickness *= 1.25;
+            else if (pressure > 1500) thickness *= 1.1;
+            
+            return Math.max(thickness, 0.012);
+        }
+        
+        function displayResults(finalSpacing, baseSpacing, freqSpacing, config) {
+            const materialValue = document.getElementById('material').value;
+            const sizeValue = parseInt(document.getElementById('lineSize').value);
+            const pressureValue = parseFloat(document.getElementById('pressure').value);
+            const temperatureValue = parseFloat(document.getElementById('temperature').value);
+            const calcMethod = document.getElementById('calcMethod').value;
+            const wallMode = document.getElementById('wallMode').value;
+            const bc = document.getElementById('boundaryCondition').value;
+			const lambda1 = bc_lambda[bc]||22.373;
+			
+            let html = `
+                <div class="result-box">
+                    <div class="result-main">
+                        Recommended Spacing: ${finalSpacing.toFixed(1)} inches - ${(finalSpacing*25.4).toFixed(1)} mm
+                    </div>
+                    <div class="result-secondary">
+                        Baseline Table: ${baseSpacing.toFixed(1)} inches - ${(baseSpacing*25.4).toFixed(1)} mm
+                        ${freqSpacing ? `<br>Frequency-Based: ${freqSpacing.toFixed(1)} inches` : ''}  - ${(freqSpacing*25.4).toFixed(1)} mm
+                        <br>Method: ${calcMethod}
+                        <br>Wall: ${wallMode === 'manual' ? 'User-defined' : 'Auto-calculated'}
+                    </div>
+                    <div class="reference-note">
+                        Reference: ${config.reference}
+                    </div>
+                </div>
+            `;
+            
+            if (freqSpacing) {
+                const materialProps = materialProperties[materialValue];
+                const od = sizeValue * 0.0625;
+                
+                let wallThickness;
+                let wallSource;
+                if (wallMode === 'manual') {
+                    wallThickness = parseFloat(document.getElementById('wallThickness').value);
+                    wallSource = 'User Input';
+                } else {
+                    wallThickness = getWallThickness(sizeValue, pressureValue);
+                    wallSource = `Auto (${pressureValue} psi)`;
+                }
+                
+                const id = od - 2 * wallThickness;
+                const I = Math.PI / 64 * (Math.pow(od, 4) - Math.pow(id, 4));
+                
+                html += `
+                    <div class="calculation-details">
+                        <h4>Natural Frequency Calculation:</h4>
+                        <pre>
+Inputs:
+  Material: ${materialValue}
+  E: ${(materialProps.E/1e6).toFixed(1)} × 10⁶ psi
+  OD: ${od.toFixed(3)} in
+  Wall: ${wallThickness.toFixed(4)} in (${wallSource})
+  ID: ${id.toFixed(3)} in
+  I: ${I.toFixed(6)} in⁴
+  lambda λ: ${lambda1.toFixed(1)}
+  
+Formula: L = √(λ/(2πfn)) × (EI/μ)^(1/4)
+  
+Result: ${freqSpacing.toFixed(1)} inches
+                        </pre>
+                    </div>
+                `;
+            }
+            
+            if (wallMode === 'manual') {
+                const wallThickness = parseFloat(document.getElementById('wallThickness').value);
+                const od = sizeValue * 0.0625;
+                const wallRatio = (wallThickness / od * 100).toFixed(1);
+                
+                html += `
+                    <div class="alert alert-info">
+                        <span>ℹ️</span>
+                        <span>Manual wall thickness: ${wallThickness.toFixed(4)}" (${wallRatio}% of OD)</span>
+                    </div>
+                `;
+                
+                if (wallThickness < 0.012) {
+                    html += `
+                        <div class="alert alert-warning">
+                            <span>⚠️</span>
+                            <span>Wall thickness below typical minimum (0.012")</span>
+                        </div>
+                    `;
+                }
+                if (wallRatio > 20) {
+                    html += `
+                        <div class="alert alert-warning">
+                            <span>⚠️</span>
+                            <span>Wall thickness exceeds 20% of OD</span>
+                        </div>
+                    `;
+                }
+            }
+            
+            if (config.warnings) {
+                config.warnings.forEach(warning => {
+                    html += `
+                        <div class="alert alert-warning">
+                            <span>⚠️</span>
+                            <span>${warning}</span>
+                        </div>
+                    `;
+                });
+            }
+            
+            if (currentSystem === 'oxygen-hp' && (materialValue === 'aluminum' || materialValue === 'titanium')) {
+                html += `
+                    <div class="alert alert-danger">
+                        <span>❌</span>
+                        <span>CRITICAL: ${materialValue} NOT permitted for oxygen systems per AS8010</span>
+                    </div>
+                `;
+            }
+            
+            if (pressureValue >= 5000 && materialValue === 'aluminum') {
+                html += `
+                    <div class="alert alert-warning">
+                        <span>⚠️</span>
+                        <span>Aluminum not recommended above 5000 psi</span>
+                    </div>
+                `;
+            }
+            
+            if (temperatureValue > materialProperties[materialValue]?.tempLimit) {
+                html += `
+                    <div class="alert alert-danger">
+                        <span>❌</span>
+                        <span>Temperature exceeds material limits</span>
+                    </div>
+                `;
+            }
+            
+            if (zoneModifiers < 1.0) {
+                html += `
+                    <div class="alert alert-info">
+                        <span>ℹ️</span>
+                        <span>Spacing reduced by ${((1 - zoneModifiers) * 100).toFixed(0)}% due to environmental zones</span>
+                    </div>
+                `;
+            }
+            
+            html += `
+                <div class="alert alert-success">
+                    <span>📋</span>
+                    <span>Applicable Standards: ${config.standards.join(', ')}</span>
+                </div>
+            `;
+            
+            document.getElementById('results').innerHTML = html;
+        }
+        
+        function exportToCSV() {
+            const config = systemConfigs[currentSystem];
+            const material = document.getElementById('material').value;
+            const size = document.getElementById('lineSize').value;
+            const wallMode = document.getElementById('wallMode').value;
+            
+            let csvContent = `TF-X Clamp Spacing Analysis\n\n`;
+            csvContent += `System Type,${config.name}\n`;
+            csvContent += `Material,${material}\n`;
+            csvContent += `Line Size,-${size}\n`;
+            csvContent += `Pressure,${document.getElementById('pressure').value} psi\n`;
+            csvContent += `Temperature,${document.getElementById('temperature').value} °F\n`;
+            csvContent += `Frequency,${document.getElementById('frequency').value} Hz\n`;
+            csvContent += `Wall Thickness Mode,${wallMode}\n`;
+            
+            if (wallMode === 'manual') {
+                csvContent += `Wall Thickness,${document.getElementById('wallThickness').value} inches\n`;
+            }
+            
+            csvContent += `\nBaseline Spacing Reference\n`;
+            csvContent += `Size,Titanium,Steel,Aluminum,Inconel\n`;
+            
+            [3,4,5,6,8,10,12,16,20,24,32].forEach(s => {
+                csvContent += `-${s},`;
+                csvContent += `${baselineSpacing['titanium'][s] || 'N/A'},`;
+                csvContent += `${baselineSpacing['steel-321'][s] || 'N/A'},`;
+                csvContent += `${baselineSpacing['aluminum'][s] || 'N/A'},`;
+                csvContent += `${baselineSpacing['inconel'][s] || 'N/A'}\n`;
+            });
+            
+            const blob = new Blob([csvContent], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `clamp_spacing_${new Date().toISOString().slice(0,10)}.csv`;
+            a.click();
+        }
+        
+        function printResults() {
+            window.print();
+        }
+        
+        function saveConfiguration() {
+            const config = {
+                system: currentSystem,
+                material: document.getElementById('material').value,
+                size: document.getElementById('lineSize').value,
+                pressure: document.getElementById('pressure').value,
+                temperature: document.getElementById('temperature').value,
+                frequency: document.getElementById('frequency').value,
+                calcMethod: document.getElementById('calcMethod').value,
+                wallMode: document.getElementById('wallMode').value,
+                wallThickness: document.getElementById('wallThickness').value,
+                zones: {
+                    engine: document.getElementById('zone-engine').checked,
+                    landing: document.getElementById('zone-landing').checked,
+                    pressure: document.getElementById('zone-pressure').checked,
+                    external: document.getElementById('zone-external').checked
+                },
+                configs: {
+                    fittings: document.getElementById('config-fittings').checked,
+                    bends: document.getElementById('config-bends').checked,
+                    vertical: document.getElementById('config-vertical').checked,
+                    thermal: document.getElementById('config-thermal').checked
+                }
+            };
+            
+            localStorage.setItem('clampSpacingConfig', JSON.stringify(config));
+            alert('Configuration saved successfully.');
+        }
+        
+        function loadConfiguration() {
+            const saved = localStorage.getItem('clampSpacingConfig');
+            if (saved) {
+                try {
+                    const config = JSON.parse(saved);
+                    selectSystem(config.system);
+                    
+                    if (config.material) document.getElementById('material').value = config.material;
+                    if (config.size) document.getElementById('lineSize').value = config.size;
+                    if (config.pressure) document.getElementById('pressure').value = config.pressure;
+                    if (config.temperature) document.getElementById('temperature').value = config.temperature;
+                    if (config.frequency) document.getElementById('frequency').value = config.frequency;
+                    if (config.calcMethod) document.getElementById('calcMethod').value = config.calcMethod;
+                    if (config.wallMode) {
+                        document.getElementById('wallMode').value = config.wallMode;
+                        toggleWallThickness();
+                    }
+                    if (config.wallThickness) document.getElementById('wallThickness').value = config.wallThickness;
+                    
+                    if (config.zones) {
+                        Object.entries(config.zones).forEach(([zone, checked]) => {
+                            const element = document.getElementById(`zone-${zone}`);
+                            if (element) element.checked = checked;
+                        });
+                    }
+                    
+                    if (config.configs) {
+                        Object.entries(config.configs).forEach(([cfg, checked]) => {
+                            const element = document.getElementById(`config-${cfg}`);
+                            if (element) element.checked = checked;
+                        });
+                    }
+                } catch (e) {
+                    console.error('Error loading configuration:', e);
+                }
+            }
+        }
+        
+        function showStandards() {
+            alert(`Referenced Standards:
+            
+Primary Standards:
+• ARP994C - Design of Tubing Installations
+• AS5440 - Clamp Block Assembly, Tube Support
+• MIL-DTL-85052 - Clamps, Loop Type
+
+Environmental Standards:
+• MIL-STD-810G - Environmental Testing
+• RTCA DO-160G - Environmental Conditions
+• ARP1383 - Impulse Testing
+
+Material Standards:
+• MIL-HDBK-5J - Metallic Materials
+• MIL-STD-889C - Dissimilar Metals
+• AMS Standards - Material Specifications
+
+System-Specific:
+• AS8010 - Oxygen Purity Standard
+• AIR825A - Oxygen Equipment Design
+• AS50881 - Wiring Aerospace Vehicle
+• MIL-STD-1560 - Fixed Wing Design
+• 14 CFR Part 23/25 - Airworthiness`);
+        }
+        
+        window.onload = function() {
+            loadConfiguration();
+        };
+    </script>
+</body>
+</html>
