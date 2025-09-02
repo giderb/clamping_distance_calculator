@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" xmlns:mso="urn:schemas-microsoft-com:office:office" xmlns:msdt="uuid:C2F41010-65B3-11d1-A29F-00AA00C14882">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -403,6 +403,13 @@
             100% { transform: rotate(360deg); }
         }
     </style>
+
+<!--[if gte mso 9]><xml>
+<mso:CustomDocumentProperties>
+<mso:Company msdt:dt="string"></mso:Company>
+<mso:Folder_x0020_Owner msdt:dt="string"></mso:Folder_x0020_Owner>
+</mso:CustomDocumentProperties>
+</xml><![endif]-->
 </head>
 <body>
     <div class="main-container">
@@ -425,11 +432,8 @@
             <button class="system-btn" onclick="selectSystem('pneumatic-lp')" data-system="pneumatic-lp">
                 <span class="system-icon">⚪</span> Pneumatic LP
             </button>
-            <button class="system-btn" onclick="selectSystem('oxygen-hp')" data-system="oxygen-hp">
-                <span class="system-icon">⭕</span> Oxygen HP
-            </button>
             <button class="system-btn" onclick="selectSystem('oxygen-lp')" data-system="oxygen-lp">
-                <span class="system-icon">🟢</span> Oxygen LP
+                <span class="system-icon">⚪</span> Oxygen LP
             </button>
             <button class="system-btn" onclick="selectSystem('fuel')" data-system="fuel">
                 <span class="system-icon">⛽</span> Fuel
@@ -439,6 +443,9 @@
             </button>
             <button class="system-btn" onclick="selectSystem('ecs')" data-system="ecs">
                 <span class="system-icon">❄️</span> ECS
+            </button>
+            <button class="system-btn" onclick="selectSystem('ecs-liquid')" data-system="ecs-liquid">
+                <span class="system-icon">❄️</span> ECS - Liquid Cooled
             </button>
             <button class="system-btn" onclick="selectSystem('electrical')" data-system="electrical">
                 <span class="system-icon">⚡</span> Electrical
@@ -457,15 +464,47 @@
                 
                 <div class="input-group">
                     <label>Tube/Line Material:</label>
-                    <select id="material">
+                    <select id="material" onchange="toggleCustomMaterial()">
                         <option value="titanium">Titanium 3Al-2.5V</option>
                         <option value="steel-321">Steel CRES 321</option>
 						<option value="steel-21-6-9">Steel CRES 21-6-9</option>
                         <option value="steel-304">Steel CRES 304</option>
                         <option value="aluminum">Aluminum 6061-T6</option>
-                        <option value="inconel">Inconel 625</option>
+                        <option value="inconel">Inconel 718</option>
+                        <option value="custom">Custom Material Entry</option>
                     </select>
                     <span class="unit"></span>
+                </div>
+                
+                <div id="customMaterialGroup" style="display: none;">
+                    <div class="input-group">
+                        <label>Material Name:</label>
+                        <input type="text" id="customMaterialName" placeholder="e.g., Steel CRES 15-5PH" value="">
+                        <span class="unit"></span>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label>Elastic Modulus (E):</label>
+                        <input type="number" id="customElasticModulus" value="29.0" min="1" max="50" step="0.1">
+                        <span class="unit">× 10⁶ psi</span>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label>Material Density:</label>
+                        <input type="number" id="customDensity" value="0.290" min="0.050" max="0.500" step="0.001">
+                        <span class="unit">lb/in³</span>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label>Temperature Limit:</label>
+                        <input type="number" id="customTempLimit" value="800" min="100" max="2000" step="50">
+                        <span class="unit">°F</span>
+                    </div>
+                    
+                    <div class="alert alert-info" style="margin: 10px 0;">
+                        <span>ℹ️</span>
+                        <span>Reference: MMPDS, AMS specifications, or supplier material data sheets</span>
+                    </div>
                 </div>
                 
                 <div class="input-group">
@@ -482,6 +521,8 @@
                         <option value="20">-20 (1.25")</option>
                         <option value="24">-24 (1.5")</option>
                         <option value="32">-32 (2")</option>
+                        <option value="40">-40 (2.5")</option>
+                        <option value="48">-48 (3")</option>
                     </select>
                     <span class="unit"></span>
                 </div>
@@ -520,13 +561,13 @@
                 <div class="input-group">
                     <label>Wall Thickness Mode:</label>
                     <select id="wallMode" onchange="toggleWallThickness()">
+                        <option value="manual" selected>Manual Entry</option>
                         <option value="auto">Auto (Pressure-based)</option>
-                        <option value="manual">Manual Entry</option>
                     </select>
                     <span class="unit"></span>
                 </div>
                 
-                <div class="input-group" id="wallThicknessGroup" style="display: none;">
+                <div class="input-group" id="wallThicknessGroup">
                     <label>Wall Thickness:</label>
                     <input type="number" id="wallThickness" value="0.035" min="0.010" max="0.250" step="0.001">
                     <span class="unit">inches</span>
@@ -586,12 +627,34 @@
                         </div>
                         <div class="zone-checkbox">
                             <input type="checkbox" id="config-vertical" onchange="updateConfig()">
-                            <label for="config-vertical">Vertical Run (×0.50)</label>
+                            <label for="config-vertical">Vertical Run (×0.75)</label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="margin-top: 20px;">
+                    <h3 style="font-size: 16px; color: #34495e; margin-bottom: 10px;">Flexible Coupling Configuration</h3>
+                    <div class="zone-modifier">
+                        <div class="zone-checkbox">
+                            <input type="checkbox" id="config-swivel" onchange="updateConfig()">
+                            <label for="config-swivel">Universal/Swivel Joints (×0.70)</label>
                         </div>
                         <div class="zone-checkbox">
-                            <input type="checkbox" id="config-thermal" onchange="updateConfig()">
-                            <label for="config-thermal">Thermal Expansion (×0.90)</label>
+                            <input type="checkbox" id="config-bellows" onchange="updateConfig()">
+                            <label for="config-bellows">Expansion Bellows/Glands (×0.80)</label>
                         </div>
+                        <div class="zone-checkbox">
+                            <input type="checkbox" id="config-hose" onchange="updateConfig()">
+                            <label for="config-hose">Flexible Hose Segments (×0.85)</label>
+                        </div>
+                        <div class="zone-checkbox">
+                            <input type="checkbox" id="config-multiple-flex" onchange="updateConfig()">
+                            <label for="config-multiple-flex">Multiple Flexible Elements (×0.60)</label>
+                        </div>
+                    </div>
+                    <div class="alert alert-info" style="margin: 10px 0; font-size: 12px;">
+                        <span>ℹ️</span>
+                        <span>Reference: ARP994C, AIR4918 - Dynamic amplification effects per aerospace design practices</span>
                     </div>
                 </div>
             </div>
@@ -691,15 +754,6 @@
                         <tr>
                             <td>-16</td>
                             <td>1.000</td>
-                            <td>30.0</td>
-                            <td>32.0</td>
-                            <td>27.5</td>
-                            <td>35.0</td>
-                            <td>AS5440</td>
-                        </tr>
-                        <tr>
-                            <td>-20</td>
-                            <td>1.250</td>
                             <td>28.0</td>
                             <td>30.0</td>
                             <td>26.5</td>
@@ -707,8 +761,44 @@
                             <td>AS5440</td>
                         </tr>
                         <tr>
+                            <td>-20</td>
+                            <td>1.250</td>
+                            <td>30.0</td>
+                            <td>32.0</td>
+                            <td>27.5</td>
+                            <td>32.0</td>
+                            <td>AS5440</td>
+                        </tr>
+                        <tr>
                             <td>-24</td>
                             <td>1.500</td>
+                            <td>34.0</td>
+                            <td>32.5</td>
+                            <td>29.5</td>
+                            <td>32.5</td>
+                            <td>AS5440</td>
+                        </tr>
+                        <tr>
+                            <td>-32</td>
+                            <td>2.000</td>
+                            <td>34.0</td>
+                            <td>32.5</td>
+                            <td>29.5</td>
+                            <td>32.5</td>
+                            <td>AS5440</td>
+                        </tr>
+                        <tr>
+                            <td>-40</td>
+                            <td>2.500</td>
+                            <td>34.0</td>
+                            <td>32.5</td>
+                            <td>29.5</td>
+                            <td>32.5</td>
+                            <td>AS5440 (Same </td>
+                        </tr>
+                        <tr>
+                            <td>-48</td>
+                            <td>2.500</td>
                             <td>34.0</td>
                             <td>32.5</td>
                             <td>29.5</td>
@@ -828,7 +918,7 @@
                     </div>
                     
                     <div class="reference-card">
-                        <h3>Material Properties (MIL-HDBK-5J)</h3>
+                        <h3>Material Properties (MMPDS)</h3>
                         <table class="reference-table">
                             <tr>
                                 <td>Titanium E</td>
@@ -871,6 +961,58 @@
                         </table>
                     </div>
                     
+                    <div class="reference-card">
+                        <h3>Custom Material Entry Guide</h3>
+                        <table class="reference-table">
+                            <tr>
+                                <td>Data Sources</td>
+                                <td>MMPDS, AMS, MIL-HDBK-5</td>
+                            </tr>
+                            <tr>
+                                <td>Typical E Range</td>
+                                <td>5-50 × 10⁶ psi</td>
+                            </tr>
+                            <tr>
+                                <td>Typical Density</td>
+                                <td>0.05-0.5 lb/in³</td>
+                            </tr>
+                            <tr>
+                                <td>Temperature</td>
+                                <td>Service limit, not melting point</td>
+                            </tr>
+                            <tr>
+                                <td>Validation</td>
+                                <td>Compare with similar alloys</td>
+                            </tr>
+                        </table>
+                    </div>
+                    
+                    <div class="reference-card">
+                        <h3>Flexible Coupling Reduction Factors</h3>
+                        <table class="reference-table">
+                            <tr>
+                                <td>Universal/Swivel Joints</td>
+                                <td>0.70×</td>
+                            </tr>
+                            <tr>
+                                <td>Expansion Bellows/Glands</td>
+                                <td>0.80×</td>
+                            </tr>
+                            <tr>
+                                <td>Flexible Hose Segments</td>
+                                <td>0.85×</td>
+                            </tr>
+                            <tr>
+                                <td>Multiple Flexible Elements</td>
+                                <td>0.60×</td>
+                            </tr>
+                            <tr>
+                                <td>Reference</td>
+                                <td>ARP994C, AIR4918</td>
+                            </tr>
+                        </table>
+                    </div>
+                    
 
                 </div>
             </div>
@@ -903,7 +1045,7 @@
                 baseFactor: 1.0,
                 standards: ['ARP994C', 'AS5440', 'MIL-DTL-85052'],
                 fluidDensity: 0.0315,
-                reference: 'ARP994C'
+                reference: 'AS5440, ARP994C'
             },
             'pneumatic-hp': {
                 name: 'High Pressure Pneumatic',
@@ -913,7 +1055,7 @@
                 baseFactor: 1.0,
                 standards: ['AS5440'],
                 fluidDensity: 0.00012,
-                reference: 'AS5440'
+                reference: 'AS5440, ARP994C'
             },
             'pneumatic-lp': {
                 name: 'Low Pressure Pneumatic',
@@ -923,24 +1065,24 @@
                 baseFactor: 1.2,
                 standards: ['AS5440'],
                 fluidDensity: 0.00012,
-                reference: 'AS5440'
+                reference: 'AS5440, ARP994C'
             },
             'oxygen-hp': {
                 name: 'High Pressure Oxygen',
                 pressureRange: [1800, 3000],
                 tempRange: [-65, 160],
-                materials: ['steel-321', 'steel-304'],
+                materials: ['steel-321', 'steel-304', 'steel-21-6-9', 'aluminum'],
                 baseFactor: 0.8,
                 standards: ['AS8010', 'AIR825A'],
                 fluidDensity: 0.00013,
-                warnings: ['No aluminum or titanium per AS8010', 'Oxygen-clean required'],
+                warnings: ['Oxygen-clean required'],
                 reference: 'AS8010'
             },
             'oxygen-lp': {
                 name: 'Low Pressure Oxygen',
                 pressureRange: [0, 75],
                 tempRange: [-65, 100],
-                materials: ['steel-304'],
+                materials: ['steel-304', 'steel-21-6-9', 'aluminum'],
                 baseFactor: 1.1,
                 standards: ['AS8010'],
                 fluidDensity: 0.00013,
@@ -951,18 +1093,18 @@
                 pressureRange: [0, 150],
                 tempRange: [-65, 180],
                 materials: ['aluminum', 'steel-304'],
-                baseFactor: 0.9,
-                standards: ['14 CFR Part 23/25'],
+                baseFactor: 1.0,
+                standards: ['AS5440', 'ARP994C'],
                 fluidDensity: 0.028,
-                warnings: ['Conductive clamps required', 'Fire zone considerations'],
-                reference: '14 CFR 25.993'
+                warnings: ['Conductive clamps required', 'Select material according to the fire zone considerations'],
+                reference: 'AS5440, ARP994C'
             },
             'bleed-air': {
                 name: 'Bleed Air System',
                 pressureRange: [0, 500],
                 tempRange: [0, 850],
-                materials: ['steel-321', 'inconel'],
-                baseFactor: 0.6,
+                materials: ['steel-321', 'steel-21-6-9', 'inconel'],
+                baseFactor: 1.0,
                 standards: ['ARP994C'],
                 fluidDensity: 0.00008,
                 warnings: ['High temperature cushions required'],
@@ -978,6 +1120,16 @@
                 fluidDensity: 0.00010,
                 reference: 'ARP994C'
             },
+            'ecs-liquid': {
+                name: 'Environmental Control System',
+                pressureRange: [0, 100],
+                tempRange: [-40, 200],
+                materials: ['aluminum', 'steel-304'],
+                baseFactor: 1.0,
+                standards: ['ARP994C'],
+                fluidDensity: 0.0307,
+                reference: 'ARP994C'
+            },
             'electrical': {
                 name: 'Electrical Wiring',
                 pressureRange: [0, 0],
@@ -986,7 +1138,7 @@
                 baseFactor: 1.0,
                 standards: ['AS50881', 'MIL-STD-1560'],
                 fluidDensity: 0,
-                warnings: ['24" max spacing typical', '12" for vertical runs'],
+                warnings: ['For heavy harnesses, these values should be calculated by the structural analyst','24" max spacing typical', '12" for vertical runs'],
                 reference: 'AS50881'
             }
         };
@@ -995,27 +1147,33 @@
         const baselineSpacing = {
             'titanium': {
                 3: 13.0, 4: 15.0, 5: 16.0, 6: 17.0, 8: 20.0,
-                10: 22.0, 12: 24.0, 16: 28.0, 20: 31.0, 24: 34.0, 32: 35.0
+                10: 22.0, 12: 24.0, 16: 28.0, 20: 31.0, 24: 34.0, 32: 34.0,
+                40: 34.0, 48: 34.0
             },
             'steel-321': {
                 3: 14.0, 4: 16.0, 5: 18.0, 6: 20.0, 8: 23.0,
-                10: 25.5, 12: 27.5, 16: 30.0, 20: 31.5, 24: 32.5, 32: 36.0
+                10: 25.5, 12: 27.5, 16: 30.0, 20: 31.5, 24: 32.5, 32: 32.5,
+                40: 32.5, 48: 32.5
             },
 			'steel-21-6-9': {
                 3: 14.0, 4: 16.0, 5: 18.0, 6: 20.0, 8: 23.0,
-                10: 25.5, 12: 27.5, 16: 30.0, 20: 31.5, 24: 32.5, 32: 36.0
+                10: 25.5, 12: 27.5, 16: 30.0, 20: 31.5, 24: 32.5, 32: 32.5,
+                40: 32.5, 48: 32.5
             },
             'steel-304': {
                 3: 14.0, 4: 16.0, 5: 18.0, 6: 20.0, 8: 23.0,
-                10: 25.5, 12: 27.5, 16: 30.0, 20: 31.5, 24: 32.5, 32: 36.0
+                10: 25.5, 12: 27.5, 16: 30.0, 20: 31.5, 24: 32.5, 32: 32.5,
+                40: 32.5, 48: 32.5
             },
             'aluminum': {
                 3: 12.0, 4: 13.5, 5: 15.0, 6: 16.5, 8: 19.0,
-                10: 22.0, 12: 23.0, 16: 26.5, 20: 28.5, 24: 29.5, 32: 32.0
+                10: 22.0, 12: 23.0, 16: 26.5, 20: 28.5, 24: 29.5, 32: 29.5,
+                40: 29.5, 48: 29.5
             },
             'inconel': {
                 3: 14.0, 4: 16.0, 5: 18.0, 6: 20.0, 8: 23.0,
-                10: 25.5, 12: 27.5, 16: 30.0, 20: 31.5, 24: 32.5, 32: 36.0
+                10: 25.5, 12: 27.5, 16: 30.0, 20: 31.5, 24: 32.5, 32: 32.5,
+                40: 32.5, 48: 32.5
             },
         };
         
@@ -1044,7 +1202,7 @@
             'aluminum': { 
                 E: 10.0e6,
                 density: 0.098,
-                tempLimit: 300
+                tempLimit: 250
             },
             'inconel': { 
                 E: 30.0e6,
@@ -1074,6 +1232,36 @@
         let zoneModifiers = 1.0;
         let configModifiers = 1.0;
         
+        function toggleCustomMaterial() {
+            const material = document.getElementById('material').value;
+            const customGroup = document.getElementById('customMaterialGroup');
+            
+            if (material === 'custom') {
+                customGroup.style.display = 'block';
+            } else {
+                customGroup.style.display = 'none';
+            }
+        }
+        
+        function getCustomMaterialProperties() {
+            return {
+                name: document.getElementById('customMaterialName').value || 'Custom Material',
+                E: parseFloat(document.getElementById('customElasticModulus').value) * 1e6,
+                density: parseFloat(document.getElementById('customDensity').value),
+                tempLimit: parseFloat(document.getElementById('customTempLimit').value)
+            };
+        }
+        
+        function getCurrentMaterialProperties() {
+            const material = document.getElementById('material').value;
+            
+            if (material === 'custom') {
+                return getCustomMaterialProperties();
+            } else {
+                return materialProperties[material];
+            }
+        }
+        
         function updateAutoWallThickness() {
             const wallMode = document.getElementById('wallMode').value;
             if (wallMode === 'manual') {
@@ -1093,6 +1281,7 @@
             
             if (wallMode === 'manual') {
                 wallThicknessGroup.style.display = 'grid';
+                // Set appropriate default thickness when switching to manual mode
                 const size = parseInt(document.getElementById('lineSize').value);
                 const pressure = parseFloat(document.getElementById('pressure').value);
                 const autoThickness = getWallThickness(size, pressure);
@@ -1115,7 +1304,7 @@
             
             document.getElementById('pressure').min = config.pressureRange[0];
             document.getElementById('pressure').max = config.pressureRange[1];
-            document.getElementById('pressure').value = Math.min(3000, config.pressureRange[1]);
+            document.getElementById('pressure').value = Math.min(4200, config.pressureRange[1]);
             
             document.getElementById('temperature').min = config.tempRange[0];
             document.getElementById('temperature').max = config.tempRange[1];
@@ -1145,8 +1334,9 @@
 				'steel-21-6-9': 'Steel CRES 21-6-9',
                 'steel-304': 'Steel CRES 304',
                 'aluminum': 'Aluminum 6061-T6',
-                'inconel': 'Inconel 625',
-                'n/a': 'Not Applicable'
+                'inconel': 'Inconel 718',
+                'n/a': 'Not Applicable',
+                'custom': 'Custom Material Entry'
             };
             
             materials.forEach(mat => {
@@ -1156,8 +1346,17 @@
                 select.appendChild(option);
             });
             
-            if (materials.includes(currentValue)) {
+            // Always add custom material option (except for electrical systems)
+            if (!materials.includes('n/a')) {
+                const customOption = document.createElement('option');
+                customOption.value = 'custom';
+                customOption.textContent = materialNames['custom'];
+                select.appendChild(customOption);
+            }
+            
+            if (materials.includes(currentValue) || currentValue === 'custom') {
                 select.value = currentValue;
+                toggleCustomMaterial(); // Ensure custom fields are shown/hidden correctly
             }
         }
         
@@ -1181,6 +1380,7 @@
         function updateConfig() {
             configModifiers = 1.0;
             
+            // Standard configuration factors
             if (document.getElementById('config-fittings').checked) {
                 configModifiers *= 0.8;
             }
@@ -1188,11 +1388,30 @@
                 configModifiers *= 0.85;
             }
             if (document.getElementById('config-vertical').checked) {
-                configModifiers *= 0.5;
+                configModifiers *= 0.75;
             }
-            if (document.getElementById('config-thermal').checked) {
-                configModifiers *= 0.9;
+            
+            // Flexible coupling configuration factors
+            let flexibleModifier = 1.0;
+            
+            // Check if multiple flexible elements is selected (overrides individual factors)
+            if (document.getElementById('config-multiple-flex').checked) {
+                flexibleModifier = 0.60; // Most severe reduction for multiple elements
+            } else {
+                // Apply individual flexible coupling factors (take minimum of selected)
+                if (document.getElementById('config-swivel').checked) {
+                    flexibleModifier = Math.min(flexibleModifier, 0.70);
+                }
+                if (document.getElementById('config-bellows').checked) {
+                    flexibleModifier = Math.min(flexibleModifier, 0.80);
+                }
+                if (document.getElementById('config-hose').checked) {
+                    flexibleModifier = Math.min(flexibleModifier, 0.85);
+                }
             }
+            
+            // Apply flexible coupling modifier
+            configModifiers *= flexibleModifier;
         }
         
         function calculateSpacing() {
@@ -1209,7 +1428,7 @@
                 const bc = document.getElementById('boundaryCondition').value;
 				const lambda1 = bc_lambda[bc]||22.373;
 				
-                let baseSpacing = baselineSpacing[material]?.[size] || 24;
+                let baseSpacing = baselineSpacing[material]?.[size] || 32;
                 
                 baseSpacing *= config.baseFactor;
                 
@@ -1227,6 +1446,9 @@
                 let freqSpacing = null;
                 if (material !== 'n/a' && currentSystem !== 'electrical') {
                     freqSpacing = calculateFrequencySpacing(material, size, frequency, pressure, config.fluidDensity, lambda1);
+                    freqSpacing *= config.baseFactor;
+                    freqSpacing *= zoneModifiers;
+                    freqSpacing *= configModifiers;
                 }
                 
                 let finalSpacing;
@@ -1239,8 +1461,7 @@
                 } else {
                     finalSpacing = baseSpacing;
                 }
-                
-                if (finalSpacing < 6) finalSpacing = 6;
+
                 if (finalSpacing > 48) finalSpacing = 48;
                 
                 displayResults(finalSpacing, baseSpacing, freqSpacing, config);
@@ -1250,7 +1471,7 @@
         }
         
         function calculateFrequencySpacing(material, size, frequency, pressure, fluidDensity, lambda1) {
-            const materialProps = materialProperties[material];
+            const materialProps = getCurrentMaterialProperties();
             if (!materialProps) return null;
             
             const od = size * 0.0625;
@@ -1325,7 +1546,7 @@
             `;
             
             if (freqSpacing) {
-                const materialProps = materialProperties[materialValue];
+                const materialProps = getCurrentMaterialProperties();
                 const od = sizeValue * 0.0625;
                 
                 let wallThickness;
@@ -1341,13 +1562,20 @@
                 const id = od - 2 * wallThickness;
                 const I = Math.PI / 64 * (Math.pow(od, 4) - Math.pow(id, 4));
                 
+                let materialDisplayName = materialValue;
+                if (materialValue === 'custom') {
+                    materialDisplayName = materialProps.name || 'Custom Material';
+                }
+                
                 html += `
                     <div class="calculation-details">
                         <h4>Natural Frequency Calculation:</h4>
                         <pre>
 Inputs:
-  Material: ${materialValue}
+  Material: ${materialDisplayName}
   E: ${(materialProps.E/1e6).toFixed(1)} × 10⁶ psi
+  rho_material: ${(materialProps.density).toFixed(3)} lb/in3
+  rho_fluid: ${(config.fluidDensity).toFixed(3)} lb/in3
   OD: ${od.toFixed(3)} in
   Wall: ${wallThickness.toFixed(4)} in (${wallSource})
   ID: ${id.toFixed(3)} in
@@ -1360,6 +1588,46 @@ Result: ${freqSpacing.toFixed(1)} inches
                         </pre>
                     </div>
                 `;
+            }
+            
+            // Custom material validation warnings
+            if (materialValue === 'custom') {
+                const customProps = getCustomMaterialProperties();
+                
+                html += `
+                    <div class="alert alert-info">
+                        <span>ℹ️</span>
+                        <span>Custom Material: ${customProps.name} | E: ${(customProps.E/1e6).toFixed(1)}×10⁶ psi | ρ: ${customProps.density.toFixed(3)} lb/in³ | T_limit: ${customProps.tempLimit}°F</span>
+                    </div>
+                `;
+                
+                // Validate custom material properties
+                if (customProps.E < 5e6 || customProps.E > 50e6) {
+                    html += `
+                        <div class="alert alert-warning">
+                            <span>⚠️</span>
+                            <span>Elastic modulus outside typical range (5-50 × 10⁶ psi) - verify material data</span>
+                        </div>
+                    `;
+                }
+                
+                if (customProps.density < 0.05 || customProps.density > 0.5) {
+                    html += `
+                        <div class="alert alert-warning">
+                            <span>⚠️</span>
+                            <span>Material density outside typical range (0.05-0.5 lb/in³) - verify material data</span>
+                        </div>
+                    `;
+                }
+                
+                if (temperatureValue > customProps.tempLimit) {
+                    html += `
+                        <div class="alert alert-danger">
+                            <span>⛔</span>
+                            <span>Operating temperature (${temperatureValue}°F) exceeds custom material limit (${customProps.tempLimit}°F)</span>
+                        </div>
+                    `;
+                }
             }
             
             if (wallMode === 'manual') {
@@ -1403,15 +1671,6 @@ Result: ${freqSpacing.toFixed(1)} inches
                 });
             }
             
-            if (currentSystem === 'oxygen-hp' && (materialValue === 'aluminum' || materialValue === 'titanium')) {
-                html += `
-                    <div class="alert alert-danger">
-                        <span>❌</span>
-                        <span>CRITICAL: ${materialValue} NOT permitted for oxygen systems per AS8010</span>
-                    </div>
-                `;
-            }
-            
             if (pressureValue >= 5000 && materialValue === 'aluminum') {
                 html += `
                     <div class="alert alert-warning">
@@ -1421,13 +1680,17 @@ Result: ${freqSpacing.toFixed(1)} inches
                 `;
             }
             
-            if (temperatureValue > materialProperties[materialValue]?.tempLimit) {
-                html += `
-                    <div class="alert alert-danger">
-                        <span>❌</span>
-                        <span>Temperature exceeds material limits</span>
-                    </div>
-                `;
+            // Standard material temperature check
+            if (materialValue !== 'custom') {
+                const standardProps = materialProperties[materialValue];
+                if (standardProps && temperatureValue > standardProps.tempLimit) {
+                    html += `
+                        <div class="alert alert-danger">
+                            <span>⛔</span>
+                            <span>Temperature exceeds material limits</span>
+                        </div>
+                    `;
+                }
             }
             
             if (zoneModifiers < 1.0) {
@@ -1435,6 +1698,51 @@ Result: ${freqSpacing.toFixed(1)} inches
                     <div class="alert alert-info">
                         <span>ℹ️</span>
                         <span>Spacing reduced by ${((1 - zoneModifiers) * 100).toFixed(0)}% due to environmental zones</span>
+                    </div>
+                `;
+            }
+            
+            // Check for flexible coupling reductions
+            let flexibleCouplingActive = false;
+            let flexibleCouplingType = '';
+            
+            if (document.getElementById('config-multiple-flex').checked) {
+                flexibleCouplingActive = true;
+                flexibleCouplingType = 'Multiple Flexible Elements (60% reduction)';
+            } else {
+                let flexibleTypes = [];
+                if (document.getElementById('config-swivel').checked) {
+                    flexibleTypes.push('Universal/Swivel Joints');
+                }
+                if (document.getElementById('config-bellows').checked) {
+                    flexibleTypes.push('Expansion Bellows/Glands');
+                }
+                if (document.getElementById('config-hose').checked) {
+                    flexibleTypes.push('Flexible Hose Segments');
+                }
+                
+                if (flexibleTypes.length > 0) {
+                    flexibleCouplingActive = true;
+                    flexibleCouplingType = flexibleTypes.join(', ');
+                }
+            }
+            
+            if (flexibleCouplingActive) {
+                html += `
+                    <div class="alert alert-warning">
+                        <span>⚠️</span>
+                        <span>Flexible Coupling Effects: ${flexibleCouplingType} - Reduced spacing due to dynamic amplification factors per ARP994C/AIR4918</span>
+                    </div>
+                `;
+            }
+            
+            // Show overall configuration modifier impact
+            if (configModifiers < 1.0) {
+                const totalConfigReduction = ((1 - configModifiers) * 100).toFixed(0);
+                html += `
+                    <div class="alert alert-info">
+                        <span>ℹ️</span>
+                        <span>Total configuration factors reduced spacing by ${totalConfigReduction}%</span>
                     </div>
                 `;
             }
@@ -1457,7 +1765,17 @@ Result: ${freqSpacing.toFixed(1)} inches
             
             let csvContent = `TF-X Clamp Spacing Analysis\n\n`;
             csvContent += `System Type,${config.name}\n`;
-            csvContent += `Material,${material}\n`;
+            
+            if (material === 'custom') {
+                const customProps = getCustomMaterialProperties();
+                csvContent += `Material,${customProps.name} (Custom)\n`;
+                csvContent += `Elastic Modulus,${(customProps.E/1e6).toFixed(1)} × 10⁶ psi\n`;
+                csvContent += `Density,${customProps.density.toFixed(3)} lb/in³\n`;
+                csvContent += `Temperature Limit,${customProps.tempLimit} °F\n`;
+            } else {
+                csvContent += `Material,${material}\n`;
+            }
+            
             csvContent += `Line Size,-${size}\n`;
             csvContent += `Pressure,${document.getElementById('pressure').value} psi\n`;
             csvContent += `Temperature,${document.getElementById('temperature').value} °F\n`;
@@ -1466,6 +1784,30 @@ Result: ${freqSpacing.toFixed(1)} inches
             
             if (wallMode === 'manual') {
                 csvContent += `Wall Thickness,${document.getElementById('wallThickness').value} inches\n`;
+            }
+            
+            // Add flexible coupling configuration information
+            let flexibleCouplings = [];
+            if (document.getElementById('config-multiple-flex').checked) {
+                flexibleCouplings.push('Multiple Flexible Elements');
+            } else {
+                if (document.getElementById('config-swivel').checked) flexibleCouplings.push('Universal/Swivel Joints');
+                if (document.getElementById('config-bellows').checked) flexibleCouplings.push('Expansion Bellows/Glands');
+                if (document.getElementById('config-hose').checked) flexibleCouplings.push('Flexible Hose Segments');
+            }
+            
+            if (flexibleCouplings.length > 0) {
+                csvContent += `Flexible Coupling Types,${flexibleCouplings.join('; ')}\n`;
+            }
+            
+            // Add other configuration factors
+            let otherConfigs = [];
+            if (document.getElementById('config-fittings').checked) otherConfigs.push('Unions/Tees');
+            if (document.getElementById('config-bends').checked) otherConfigs.push('Bends >20°');
+            if (document.getElementById('config-vertical').checked) otherConfigs.push('Vertical Run');
+            
+            if (otherConfigs.length > 0) {
+                csvContent += `Line Configuration,${otherConfigs.join('; ')}\n`;
             }
             
             csvContent += `\nBaseline Spacing Reference\n`;
@@ -1502,6 +1844,12 @@ Result: ${freqSpacing.toFixed(1)} inches
                 calcMethod: document.getElementById('calcMethod').value,
                 wallMode: document.getElementById('wallMode').value,
                 wallThickness: document.getElementById('wallThickness').value,
+                customMaterial: {
+                    name: document.getElementById('customMaterialName').value,
+                    elasticModulus: document.getElementById('customElasticModulus').value,
+                    density: document.getElementById('customDensity').value,
+                    tempLimit: document.getElementById('customTempLimit').value
+                },
                 zones: {
                     engine: document.getElementById('zone-engine').checked,
                     landing: document.getElementById('zone-landing').checked,
@@ -1512,7 +1860,10 @@ Result: ${freqSpacing.toFixed(1)} inches
                     fittings: document.getElementById('config-fittings').checked,
                     bends: document.getElementById('config-bends').checked,
                     vertical: document.getElementById('config-vertical').checked,
-                    thermal: document.getElementById('config-thermal').checked
+                    swivel: document.getElementById('config-swivel').checked,
+                    bellows: document.getElementById('config-bellows').checked,
+                    hose: document.getElementById('config-hose').checked,
+                    multipleFlex: document.getElementById('config-multiple-flex').checked
                 }
             };
             
@@ -1527,7 +1878,10 @@ Result: ${freqSpacing.toFixed(1)} inches
                     const config = JSON.parse(saved);
                     selectSystem(config.system);
                     
-                    if (config.material) document.getElementById('material').value = config.material;
+                    if (config.material) {
+                        document.getElementById('material').value = config.material;
+                        toggleCustomMaterial(); // Show/hide custom fields
+                    }
                     if (config.size) document.getElementById('lineSize').value = config.size;
                     if (config.pressure) document.getElementById('pressure').value = config.pressure;
                     if (config.temperature) document.getElementById('temperature').value = config.temperature;
@@ -1539,6 +1893,14 @@ Result: ${freqSpacing.toFixed(1)} inches
                     }
                     if (config.wallThickness) document.getElementById('wallThickness').value = config.wallThickness;
                     
+                    // Load custom material properties
+                    if (config.customMaterial) {
+                        if (config.customMaterial.name) document.getElementById('customMaterialName').value = config.customMaterial.name;
+                        if (config.customMaterial.elasticModulus) document.getElementById('customElasticModulus').value = config.customMaterial.elasticModulus;
+                        if (config.customMaterial.density) document.getElementById('customDensity').value = config.customMaterial.density;
+                        if (config.customMaterial.tempLimit) document.getElementById('customTempLimit').value = config.customMaterial.tempLimit;
+                    }
+                    
                     if (config.zones) {
                         Object.entries(config.zones).forEach(([zone, checked]) => {
                             const element = document.getElementById(`zone-${zone}`);
@@ -1548,7 +1910,13 @@ Result: ${freqSpacing.toFixed(1)} inches
                     
                     if (config.configs) {
                         Object.entries(config.configs).forEach(([cfg, checked]) => {
-                            const element = document.getElementById(`config-${cfg}`);
+                            let elementId;
+                            if (cfg === 'multipleFlex') {
+                                elementId = 'config-multiple-flex';
+                            } else {
+                                elementId = `config-${cfg}`;
+                            }
+                            const element = document.getElementById(elementId);
                             if (element) element.checked = checked;
                         });
                     }
@@ -1584,8 +1952,20 @@ System-Specific:
 • 14 CFR Part 23/25 - Airworthiness`);
         }
         
+        // Initialize the interface with manual mode as default on page load
         window.onload = function() {
+            // Set manual mode as default and show wall thickness input
+            document.getElementById('wallMode').value = 'manual';
+            toggleWallThickness();
+            
+            // Load any saved configuration (this might override the manual default)
             loadConfiguration();
+            
+            // If no saved configuration overrode it, ensure manual mode is still set
+            if (document.getElementById('wallMode').value !== 'manual') {
+                document.getElementById('wallMode').value = 'manual';
+                toggleWallThickness();
+            }
         };
     </script>
 </body>
